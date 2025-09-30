@@ -4,6 +4,7 @@ from airflow.models import Variable
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.slack.hooks.slack_webhook import SlackWebhookHook
 from airflow.configuration import conf as airflow_conf
+from docker.types import Mount  # ✅ 추가
 
 # ---------- Slack: 성공 시 콜백 ----------
 def slack_success(context):
@@ -40,8 +41,8 @@ IMAGE_REPO = Variable.get("IMAGE_REPO", default_var="yeeho0o/mlops-test")
 IMAGE_TAG  = Variable.get("IMAGE_TAG",  default_var="latest")
 IMAGE = f"{IMAGE_REPO}:{IMAGE_TAG}"
 
-# 네임드 볼륨(Compose와 동일하게)
-SHARED_VOLUME = "shared-data:/opt/shared"
+# ✅ volumes 대신 mounts 사용
+MOUNT_SHARED = Mount(source="shared-data", target="/opt/shared", type="volume")
 
 default_args = {"owner": "mlops", "depends_on_past": False, "retries": 0}
 
@@ -64,7 +65,7 @@ with DAG(
         auto_remove=True,
         force_pull=True,
         mount_tmp_dir=False,
-        volumes=[SHARED_VOLUME],
+        mounts=[MOUNT_SHARED],  # ✅ 변경
         environment={
             "SHARED_DIR": "/opt/shared",
             "RAWG_API_KEY": "{{ var.value.RAWG_API_KEY | default('') }}",
@@ -80,7 +81,7 @@ with DAG(
         auto_remove=True,
         force_pull=True,
         mount_tmp_dir=False,
-        volumes=[SHARED_VOLUME],
+        mounts=[MOUNT_SHARED],  # ✅ 변경
         environment={
             "MODEL_DIR": "/opt/shared/model",
             "GAMES_LOG_PATH": "/opt/shared/games_log.csv",
@@ -98,7 +99,7 @@ with DAG(
         auto_remove=True,
         force_pull=True,
         mount_tmp_dir=False,
-        volumes=[SHARED_VOLUME],
+        mounts=[MOUNT_SHARED],  # ✅ 변경
         environment={
             "MODEL_DIR": "/opt/shared/model",
             "RECO_PATH": "/opt/shared/recommendations.json",
