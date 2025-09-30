@@ -39,10 +39,14 @@ def run_train():
     env["GAMES_LOG_PATH"] = data_path
     if WANDB_API_KEY:
         env["WANDB_API_KEY"] = WANDB_API_KEY
-        env.setdefault("WANDB_MODE", WANDB_MODE)
+    env.setdefault("WANDB_MODE", WANDB_MODE)
 
-    # train 스크립트를 파일 경로로 실행 (패키지 임포트 충돌 회피)
-    cmd = ["python", "mlops/src/train/train.py"]
+    # ✅ 방어용: src.* 임포트가 어디서든 되도록 PYTHONPATH 보정
+    env["PYTHONPATH"] = f"/opt/mlops:{env.get('PYTHONPATH','')}"
+
+    # train 스크립트를 파일 경로로 실행 (패키지 임포트/워크디렉터리 이슈 회피)
+    script_path = Path(__file__).resolve().parent / "train" / "train.py"
+    cmd = ["python", str(script_path)]
     print(f"[INFO] Running: {' '.join(cmd)}")
     print(f"[INFO] GAMES_LOG_PATH={data_path}")
     print(f"[INFO] MODEL_DIR={MODEL_DIR}")
