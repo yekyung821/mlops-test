@@ -1,0 +1,28 @@
+# .github/workflows/ci.yml
+name: build-and-push
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build & Push (latest + v5)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            moongs95/third-party-mlops:latest
+            moongs95/third-party-mlops:v5
+          cache-from: type=registry,ref=moongs95/third-party-mlops:latest
+          cache-to: type=inline

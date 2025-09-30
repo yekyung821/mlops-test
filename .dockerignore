@@ -1,0 +1,11 @@
+.git
+.dockerignore
+__pycache__/
+*.pyc
+*.pyo
+*.log
+shared/
+airflow-logs/
+data-prepare/result/
+.env
+.denv
