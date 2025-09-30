@@ -1,4 +1,3 @@
-# dags/games_recs_pipeline.py
 from datetime import datetime
 from airflow import DAG
 from airflow.models import Variable
@@ -19,7 +18,9 @@ def slack_success(context):
     who = conf.get("who", "unknown")
     user_id = conf.get("user_id", "N/A")
     top_k = conf.get("top_k", "N/A")
-    image_tag = Variable.get("IMAGE_TAG", default_var="latest")
+
+    image_repo = Variable.get("IMAGE_REPO", default_var="yeeho0o/mlops-test")
+    image_tag  = Variable.get("IMAGE_TAG",  default_var="latest")
 
     base_url = airflow_conf.get("webserver", "base_url", fallback="http://localhost:8080")
     run_link = f"{base_url}/dags/{dag_id}/grid?dag_run_id={run_id}"
@@ -29,14 +30,17 @@ def slack_success(context):
         f"• run_id: `{run_id}`\n"
         f"• by: *{who}*\n"
         f"• params: user_id={user_id}, top_k={top_k}\n"
-        f"• image: `moongs95/third-party-mlops:{image_tag}`\n"
+        f"• image: `{image_repo}:{image_tag}`\n"
         f"• details: {run_link}"
     )
     SlackWebhookHook(webhook_url=url).send(text=msg)
 
 # ---------- 이미지/볼륨 ----------
-IMAGE_TAG = Variable.get("IMAGE_TAG", default_var="latest")
-IMAGE = f"moongs95/third-party-mlops:{IMAGE_TAG}"
+IMAGE_REPO = Variable.get("IMAGE_REPO", default_var="yeeho0o/mlops-test")
+IMAGE_TAG  = Variable.get("IMAGE_TAG",  default_var="latest")
+IMAGE = f"{IMAGE_REPO}:{IMAGE_TAG}"
+
+# 네임드 볼륨(Compose와 동일하게)
 SHARED_VOLUME = "shared-data:/opt/shared"
 
 default_args = {"owner": "mlops", "depends_on_past": False, "retries": 0}
@@ -48,7 +52,7 @@ with DAG(
     catchup=False,
     default_args=default_args,
     tags=["mlops", "recsys"],
-    on_success_callback=slack_success,   # ✅ 성공 시에만 알림
+    on_success_callback=slack_success,   # 성공 시에만 알림
 ) as dag:
 
     crawl = DockerOperator(
